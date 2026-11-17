@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Friend {
+  id        String      @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  avatarUrl String?
+  notes     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  splits    ItemSplit[]
+  payments  Payment[]
+}
+
+model Expense {
+  id             String        @id @default(cuid())
+  title          String
+  description    String?
+  category       String        @default("General")
+  totalAmount    Float
+  currency       String        @default("$")
+  date           DateTime      @default(now())
+  receiptUrl     String?
+  receiptRawText String?
+  tax            Float         @default(0)
+  tip            Float         @default(0)
+  discount       Float         @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  items          ExpenseItem[]
+}
+
+model ExpenseItem {
+  id          String      @id @default(cuid())
+  expenseId   String
+  expense     Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  name        String
+  price       Float
+  quantity    Int         @default(1)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  splits      ItemSplit[]
+}
+
+model ItemSplit {
+  id            String      @id @default(cuid())
+  itemId        String
+  item          ExpenseItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  friendId      String
+  friend        Friend      @relation(fields: [friendId], references: [id], onDelete: Cascade)
+  assignedShare Float
+  isSettled     Boolean     @default(false)
+  settledAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([friendId])
+  @@index([itemId])
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  friendId  String
+  friend    Friend   @relation(fields: [friendId], references: [id], onDelete: Cascade)
+  amount    Float
+  date      DateTime @default(now())
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([friendId])
+}
